@@ -50,19 +50,15 @@ router.post("/checkchat", async (req, res) => {
 // });
 
 router.get("/user/getdata", async (req, res) => {
-  console.log(
-    req.user,
-    "user!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-  );
   if (req.user) {
     const user = await User.find(
       { username: req.user.username },
-      { username: 1, socketId: 1 }
+      { username: 1, socketId: 1, image: 1 }
     )
       .populate({
         path: "rooms",
         select: { with: 1, _id: -1, room: -1 },
-        populate: [{ path: "with", select: "username" }],
+        populate: [{ path: "with", select: "username image" }],
       })
       .lean();
     for (let room of user[0].rooms) {

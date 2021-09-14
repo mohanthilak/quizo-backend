@@ -18,17 +18,14 @@ const MongoStore = require("connect-mongo");
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "https://quizoo.netlify.app",
+    origin: ["https://quizoo.netlify.app", "http://localhost:3000"],
     credentials: true,
     methods: ["GET", "POST"],
   },
 });
 
-const dbUrl =
-  "mongodb+srv://admin:BQakMbpwK4ltx3Gt@cluster0.mqwmw.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
-// process.env.DB_URL;
-const secret = "ILOVEICECREAM";
-// process.env.SECRET;
+const dbUrl = process.env.DB_URL;
+const secret = process.env.SECRET;
 
 mongoose.connect(dbUrl, {
   useNewUrlParser: true,
@@ -53,32 +50,34 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: "https://quizoo.netlify.app",
+    origin: ["https://quizoo.netlify.app", "http://localhost:3000"],
     credentials: true,
     methods: ["GET", "POST"],
   })
 );
 
+app.use(cookieParser(secret));
+app.set("trust proxy", 1);
 app.use(
   session({
+    name: "Session1.0",
+    secret,
+    resave: false,
+    saveUninitialized: true,
     store: MongoStore.create({
       mongoUrl: dbUrl,
       secret,
       touchAfter: 24 * 60 * 60,
     }),
-    name: "session",
-    secret,
-    resave: false,
-    saveUninitialized: true,
     cookie: {
-      httpsOnly: false,
       expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
       maxAge: 100 * 60 * 60 * 24 * 7,
+      domain: "quizzooo.herokuapp.com",
+      sameSite: "none",
+      secure: true,
     },
   })
 );
-
-// app.use(cookieParser(secret));
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -136,8 +135,10 @@ io.on("connection", (socket) => {
     await message.save();
     await chat.save();
     console.log(chat);
-    if (client.socketId !== "") io.to(client.socketId, { chat });
-    socket.emit("received", { chat });
+    if (client.socketId !== "") {
+      io.to(client.socketId).emit("received", { chat });
+    }
+    io.to(user.socketId).emit("received", { chat });
   });
 
   socket.on("disconnect", async () => {

@@ -3,6 +3,9 @@ const router = express.Router();
 const passport = require("passport");
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
+const multer = require("multer");
+const { storage, cloudinary } = require("../cloudinary/index");
+const upload = multer({ storage });
 
 router.get("/", (req, res) => {
   res.send("Welcome!");
@@ -11,7 +14,8 @@ router.get("/", (req, res) => {
 router.post("/login", (req, res, next) => {
   passport.authenticate("local", (err, user, info) => {
     if (err) throw err;
-    if (!user) res.send("No User Exists");
+    if (!user)
+      res.send({ loggedIn: false, message: "Invalid Username/Password" });
     else {
       req.logIn(user, (err) => {
         if (err) throw err;
@@ -26,8 +30,6 @@ router.post("/login", (req, res, next) => {
 });
 
 router.get("/getuser", async (req, res) => {
-  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!user!!!!!!!!!!!!!", req.user);
-  console.log("req.body.user", req.body.user);
   if (req.user) {
     const user = await User.findOne(req.user).populate("Room");
     res.send({ isLoggedIn: true, user });
@@ -59,6 +61,17 @@ router.post("/register", (req, res) => {
       });
     }
   });
+});
+
+router.post("/image/:id", upload.single("propic"), async (req, res) => {
+  console.log("req.file", req.file);
+  const user = await User.findById(req.params.id);
+  if (user.image) {
+    await cloudinary.uploader.destroy(user.image);
+  }
+  user.image = req.file.path;
+  await user.save();
+  res.json({ path: user.image });
 });
 
 module.exports = router;

@@ -33,6 +33,7 @@ const roomSchema = new Schema({
 });
 
 const userSchema = new Schema({
+  image: String,
   username: String,
   password: String,
   isAdmim: Boolean,
