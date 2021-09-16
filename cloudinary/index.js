@@ -9,7 +9,6 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_KEY,
   api_secret: process.env.CLOUDINARY_SECRET,
 });
-console.log(process.env.CLOUDINARY_CLOUD_NAME, "dfsa");
 
 const storage = new CloudinaryStorage({
   cloudinary,
